@@ -1,0 +1,58 @@
+<html>
+
+  <head>
+    <style>
+      a {text-decoration: none; font-size:x-small; font-weight:normal; color:green;}
+      a:hover {text-decoration: underline; font-size:x-small; font-weight:bold; color:green;}
+      a:visited{color:green}
+
+      td {  padding: 10px; background-color:#E5E7E9}
+      body {background-image: url("./cork-wallet.png");}
+      p { font-family: "Georgia"}
+      .words { font-family: "Courier New"}
+    </style>
+  </head>
+
+  <!-- Thank you subtlepatterns.com for the background -->
+  
+  <body>
+
+<table style="margin:1em auto;" width="75%" height="25%">
+<tr>
+<td>
+  
+<center>
+Welcome to SCRAMBLE<br>
+</center>
+<form action="./scramble_menu.cgi">
+  <input type="radio" name="option" value="Basic">Basic<br>
+  <input type="radio" name="option" value="Moderate" disabled>Moderate<br>
+  <input type="radio" name="option" value="Hard" disabled>Hard<br>
+  <input type="submit" value="Submit">
+</form>    
+</td>
+</tr>
+
+<tr>
+<td>
+<p>
+<ul>
+<li>In basic mode you unscramble random 5 letter words. If you guess incorrectly 3 times, the game ends.<br>
+<li>In moderate they are 6 letter words, but you only have 30 seconds until the game ends.<br>
+<li>In hard the length of words increases, along with your clock time. But one wrong answer and game over!<br>
+</ul>
+
+<p>
+  
+Moderate and Hard modes have not evolved to CGI version yet! But you can check them out in the terminal, perl code is on my <a href="https://github.com/zapwai">github</a> page.
+
+<p>
+<a href="./">Home</a> &nbsp&nbsp&nbsp <a href="mailto:zapwai@gmail.com">Contact</a>
+
+</td>
+</tr>
+
+
+
+  </body>
+</html>
