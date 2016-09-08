@@ -13,22 +13,6 @@ use CGI;
 my $q = CGI->new;
 
 my $filename = "./words";
-#my $logname = "./SCRAMBLELOG";
-
-# my $WinCount;
-# my $LossCount;
-# my $word;
-
-# # Get parameters (old way, with SCRAMBLELOG file)
-# open (my $fh, "<", $logname) or die "No logfile...";
-# while (my $Line = <$fh>){
-#   chomp $Line;
-#   my @LN = split(/:/, $Line);
-#   if ($LN[0] eq "LC") {$LossCount=$LN[1]};
-#   if ($LN[0] eq "WC") {$WinCount=$LN[1]};
-#   if ($LN[0] eq "Word") {$word=$LN[1]};  
-# }
-# close $fh;
 
 my $WinCount=$q->param('WC');
 my $LossCount=$q->param('LC');
@@ -74,15 +58,36 @@ if ($text eq $word) {
   $WinCount++;    # increment wincount
 } else {$LossCount++;}		#increment losscount
 
-# Update log file with change counts.
-## Write to file
-# open (my $fh, ">", $logname);
-# print $fh "LC:$LossCount\n";   
-# print $fh "WC:$WinCount\n";
-# print $fh "Word:$word\n";
-# close $fh;
-
 ## Query String passes these params back, see ?& ... below
 
 # Redirect back to scramble_basic with the changed counts.
-print $q->redirect("./scramble_basic.cgi?&WC=$WinCount&LC=$LossCount&WORD=$word");
+## GET METHOD works nice enough with no javascript....
+## But then someone can cheat by changing the query.
+#print $q->redirect("./scramble_basic.cgi?&WC=$WinCount&LC=$LossCount&WORD=$word&WordGuess=$text");
+
+
+## make a page...
+## which contains a form, and passes these parameters with post...
+## autosubmits with javascript. 
+print $q->header;
+print "<html>";
+print <<CSS;
+<style>
+body {background-image: url("./cork-wallet.png");}
+</style>
+CSS
+print "<body>";
+print qq( <form action="./scramble_basic.cgi" method="post" id="MyForm"> );
+print <<HTMLPAGE;
+<input type=hidden name=WC value=$WinCount>
+<input type=hidden name=LC value=$LossCount>
+<input type=hidden name=WORD value=$word>
+<input type=hidden name=WordGuess value=$text>
+<input type="submit" value="Submit">
+</body></html>
+HTMLPAGE
+print <<JAVAMAN;
+<script>
+document.getElementById('MyForm').submit();
+</script>
+JAVAMAN

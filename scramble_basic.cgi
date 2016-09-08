@@ -49,13 +49,17 @@ my $filename = "./words";
 my $WinCount=$q->param('WC');
 my $LossCount=$q->param('LC');
 my $PreviousWord=$q->param('WORD');
+my $PreviousGuess=$q->param('WordGuess');
+
 
  if ($WinCount eq ""){ $WinCount = 0; $PreviousWord="";};
  if ($LossCount eq ""){ $LossCount = 0; };
 
 print "Loss Count: $LossCount, &nbsp&nbsp&nbsp&nbsp";
 print "Win Count: $WinCount, &nbsp&nbsp&nbsp&nbsp";
-print "Previous Word: <span class='words'> $PreviousWord </span><br>";
+
+unless ($LossCount == 0 and $WinCount == 0){print "Previous Word: <span class='words'> $PreviousWord</span>, &nbsp&nbsp&nbsp&nbsp";
+					    print "You said: <span class='words'> $PreviousGuess </span><br>";};
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,7 +111,7 @@ sub the_game{
 
 
   print <<MENUINPUT;
-  <form action="scramble_input.cgi">
+  <form action="scramble_input.cgi" method="post">
   Your Guess: <input type="text" name="WordGuess" autofocus>
 <input type=hidden name=WC value=$WinCount>
 <input type=hidden name=LC value=$LossCount>
