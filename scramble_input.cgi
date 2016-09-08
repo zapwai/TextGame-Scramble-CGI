@@ -13,26 +13,29 @@ use CGI;
 my $q = CGI->new;
 
 my $filename = "./words";
-my $logname = "./SCRAMBLELOG";
+#my $logname = "./SCRAMBLELOG";
 
-my $WinCount;
-my $LossCount;
-my $word;
+# my $WinCount;
+# my $LossCount;
+# my $word;
 
-# Get parameters
-open (my $fh, "<", $logname) or die "No logfile...";
-while (my $Line = <$fh>){
-  chomp $Line;
-  my @LN = split(/:/, $Line);
-  if ($LN[0] eq "LC") {$LossCount=$LN[1]};
-  if ($LN[0] eq "WC") {$WinCount=$LN[1]};
-  if ($LN[0] eq "Word") {$word=$LN[1]};  
-}
-close $fh;
+# # Get parameters (old way, with SCRAMBLELOG file)
+# open (my $fh, "<", $logname) or die "No logfile...";
+# while (my $Line = <$fh>){
+#   chomp $Line;
+#   my @LN = split(/:/, $Line);
+#   if ($LN[0] eq "LC") {$LossCount=$LN[1]};
+#   if ($LN[0] eq "WC") {$WinCount=$LN[1]};
+#   if ($LN[0] eq "Word") {$word=$LN[1]};  
+# }
+# close $fh;
+
+my $WinCount=$q->param('WC');
+my $LossCount=$q->param('LC');
+my $word=$q->param('WORD');
 
 my $InputWord=$q->param('WordGuess');
 my $text=$InputWord;
-
 
 sub is_word{
   # Input: $text, a string
@@ -57,10 +60,8 @@ sub is_word{
 }
 
 sub is_anagram{
-  # Returns true if the two strings passed as variables are anagrams.
-  
+  # Returns true if the two strings passed as variables are anagrams.  
   my ($s1, $s2) = @_;
-
   return (join '', sort { $a cmp $b } split(//, $s1)) eq
     (join '', sort { $a cmp $b } split(//, $s2));
 }
@@ -73,15 +74,15 @@ if ($text eq $word) {
   $WinCount++;    # increment wincount
 } else {$LossCount++;}		#increment losscount
 
-
-
 # Update log file with change counts.
 ## Write to file
-open (my $fh, ">", $logname);
-print $fh "LC:$LossCount\n";   
-print $fh "WC:$WinCount\n";
-print $fh "Word:$word\n";
-close $fh;
+# open (my $fh, ">", $logname);
+# print $fh "LC:$LossCount\n";   
+# print $fh "WC:$WinCount\n";
+# print $fh "Word:$word\n";
+# close $fh;
+
+## Query String passes these params back, see ?& ... below
 
 # Redirect back to scramble_basic with the changed counts.
-print $q->redirect('./scramble_basic.cgi');
+print $q->redirect("./scramble_basic.cgi?&WC=$WinCount&LC=$LossCount&WORD=$word");

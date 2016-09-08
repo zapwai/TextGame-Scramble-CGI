@@ -44,26 +44,14 @@ my $WordLength = 5;
 
 # Relevant files.
 my $filename = "./words";
-my $logname = "./SCRAMBLELOG";
 
+## Using parameters passed via query string.
+my $WinCount=$q->param('WC');
+my $LossCount=$q->param('LC');
+my $PreviousWord=$q->param('WORD');
 
-my $WinCount = -1;
-my $LossCount = -1;
-my $PreviousWord = "Nullzer";
-
-# Intention is to either grab the counts, or set to zero.
-open (my $fh, "<", $logname);
-while (my $Line = <$fh>){
-  chomp $Line;
-  my @LN = split(/:/, $Line);
-  if ($LN[0] eq "LC") {$LossCount=$LN[1]};
-  if ($LN[0] eq "WC") {$WinCount=$LN[1]};
-  if ($LN[0] eq "Word") {$PreviousWord=$LN[1]};  
-}
-close $fh;
-
-if ($WinCount == -1){ $WinCount = 0; $PreviousWord="";};
-if ($LossCount == -1){ $LossCount = 0; };
+ if ($WinCount eq ""){ $WinCount = 0; $PreviousWord="";};
+ if ($LossCount eq ""){ $LossCount = 0; };
 
 print "Loss Count: $LossCount, &nbsp&nbsp&nbsp&nbsp";
 print "Win Count: $WinCount, &nbsp&nbsp&nbsp&nbsp";
@@ -113,20 +101,18 @@ sub mix_word{
 sub the_game{
   # The actual word, $word, is selected and written to SCRAMBLELOG.
   my $word = select_word($WordLength);	# word of length WordLength!
-
-  ## Write to file
-  open (my $fh, ">", $logname);
-  print $fh "LC:$LossCount\n";
-  print $fh "WC:$WinCount\n";
-  print $fh "Word:$word\n";
-  close $fh;
-   
+  
   my @NewWord = mix_word($word); # NewWord is a permutation of word
   print "<br>The scrambled word is...<br>","<div class='words'>",@NewWord,"</div><br>";
+
+
   print <<MENUINPUT;
-<form action="scramble_input.cgi">
+  <form action="scramble_input.cgi">
   Your Guess: <input type="text" name="WordGuess" autofocus>
-<input type="button" value="Submit">
+<input type=hidden name=WC value=$WinCount>
+<input type=hidden name=LC value=$LossCount>
+<input type=hidden name=WORD value=$word>
+<input type="submit" value="Submit">
 </form>
 MENUINPUT
 
@@ -139,6 +125,7 @@ MENUINPUT
   print "</center>";
 
   print "</td></tr></table>";
+
   print "</body></html>";  
 }
 
