@@ -143,6 +143,7 @@ sub basic_game{
   }
   elsif ($LossCount > 2){print "Your overall win count was $WinCount!<br>";
 			 print qq(<a href="./scramble_basic.cgi">Play Again</a>);
+			 print qq(<br><a href="./scramble.html">Back</a>);
 			 print qq(<br><a href="./">zapwai.net</a>);
 			 print "</body></html>";
 		       }
