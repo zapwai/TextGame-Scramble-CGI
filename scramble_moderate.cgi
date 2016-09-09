@@ -10,6 +10,9 @@
 use CGI;
 my $q = CGI->new;
 
+# get clock time left
+my $ClockTime = $q->param('TimeLeft');
+
 print "Content-type: text/html\n\n";
 print <<END;
 <html>
@@ -25,6 +28,12 @@ p { font-family: "Georgia"}
 .words { font-family: "Courier New"}
 </style>
 <!-- Thank you subtlepatterns.com for the background -->
+<!-- countdown javascript borrowed from Click Upvote on stackoverflow.com -->
+<script>
+var count=$ClockTime;
+var counter=setInterval(timer, 1000);
+function timer(){count = count - 1; document.getElementById("timer").innerHTML=count}
+</script>
 </head>
 <body>
 <br>
@@ -36,9 +45,6 @@ p { font-family: "Georgia"}
 END
 # Moderate game word length is 6, and time is set to 30 seconds.
 my $WordLength = 6;
-
-# get clock time left
-my $ClockTime = $q->param('TimeLeft');
 
 # Relevant files.
 my $filename = "./words";
@@ -59,9 +65,11 @@ print "<br>";
 
 unless ($LossCount == 0 and $WinCount == 0){print "Previous Word: <span class='words'> $PreviousWord</span>, &nbsp&nbsp&nbsp&nbsp";
 					    print "You said: <span class='words'> $PreviousGuess</span><br>";
-					    print "Time Left: $ClockTime seconds";
-					    print "<br><br>";
 					  };
+unless ($ClockTime <= 0 or $ClockTime == 30){
+  print "Time Left: <span id='timer'>$ClockTime</span> seconds"; # Javascript countdown...
+  print "<br><br>";
+};
 
 #~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -146,6 +154,7 @@ sub moderate_game{
   }
   elsif ($ClockTime <= 0){print "Time up! Your overall win count was $WinCount!<br>";
 			  print qq(<a href="./scramble_moderate.cgi">Play Again</a>);
+			  print qq(<br><a href="./scramble.html">Back</a>);			 
 			  print qq(<br><a href="./">zapwai.net</a>);
 			  print "</body></html>";
 			}
