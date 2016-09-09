@@ -2,24 +2,19 @@
 #
 # Thanks for playing SCRAMBLE!
 # Copyright David Ferrone, Aug 2014
-# Update (CGI) Aug 2016
+# Update (CGI) Sept 2016
 ##############################
-# Keep words file in the same directory.  
+# Keep words in the same directory.  
 # You can find this in /usr/dict/words or /usr/share/dict/words
-
-# Need to receive WinCount (&WC), LossCount (&LC)
-# (Could also pass Word and WordGuess to print confirmation...)
-##############################
 
 use CGI;
 my $q = CGI->new;
-
 
 print "Content-type: text/html\n\n";
 print <<END;
 <html>
 <head>
-<title>Scramble Basic -- The CGI Version!</title>
+<title>Scramble Moderate -- The CGI Version!</title>
 <style>
 a {text-decoration: none; font-size:x-small; font-weight:normal; color:green}
 a:hover {text-decoration: underline; font-size:x-small; font-weight:bold; color:green;}
@@ -39,8 +34,11 @@ p { font-family: "Georgia"}
 <td>
 <center>
 END
-# Basic game word length is 5.
-my $WordLength = 5;
+# Moderate game word length is 6, and time is set to 30 seconds.
+my $WordLength = 6;
+
+# get clock time left
+my $ClockTime = $q->param('TimeLeft');
 
 # Relevant files.
 my $filename = "./words";
@@ -51,17 +49,19 @@ my $LossCount=$q->param('LC');
 my $PreviousWord=$q->param('WORD');
 my $PreviousGuess=$q->param('WordGuess');
 
-
- if ($WinCount eq ""){ $WinCount = 0; $PreviousWord="";};
- if ($LossCount eq ""){ $LossCount = 0; };
+if ($WinCount eq ""){ $WinCount = 0; $PreviousWord="";};
+if ($LossCount eq ""){ $LossCount = 0; };
+if ($ClockTime eq ""){ $ClockTime = 30; };
 
 print "Loss Count: $LossCount, &nbsp&nbsp&nbsp&nbsp";
 print "Win Count: $WinCount, &nbsp&nbsp&nbsp&nbsp";
 print "<br>";
 
 unless ($LossCount == 0 and $WinCount == 0){print "Previous Word: <span class='words'> $PreviousWord</span>, &nbsp&nbsp&nbsp&nbsp";
-					    print "You said: <span class='words'> $PreviousGuess </span><br>";};
-
+					    print "You said: <span class='words'> $PreviousGuess</span><br>";
+					    print "Time Left: $ClockTime seconds";
+					    print "<br><br>";
+					  };
 
 #~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -110,14 +110,16 @@ sub the_game{
   my @NewWord = mix_word($word); # NewWord is a permutation of word
   print "<br>The scrambled word is...<br>","<div class='words'>",@NewWord,"</div><br>";
 
-
+  my $StartTime = time;      
   print <<MENUINPUT;
   <form action="scramble_input.cgi" method="post">
   Your Guess: <input type="text" name="WordGuess" autofocus>
 <input type=hidden name=WC value=$WinCount>
 <input type=hidden name=LC value=$LossCount>
 <input type=hidden name=WORD value=$word>
-<input type=hidden name=Mode value="basic">
+<input type=hidden name=TimeLeft value=$ClockTime>
+<input type=hidden name=PrevTime value=$StartTime>
+<input type=hidden name=Mode value="moderate">
 <input type="submit" value="Submit">
 </form>
 MENUINPUT
@@ -135,17 +137,18 @@ MENUINPUT
   print "</body></html>";  
 }
 
-sub basic_game{
-  # 3 losses will end the game in the basic version.
-  # Loops are bad on a web page?  Seems poorly thought out to use a while loop...
-  if ($LossCount < 3){
+sub moderate_game{
+  # This game ends after 30 seconds have passed.
+  # The time is checked with $StartTime.
+  # The time is checked again in the input script, the difference is deducted from $ClockTime and passed back here.
+  if ($ClockTime > 0){
     the_game();
   }
-  elsif ($LossCount > 2){print "Your overall win count was $WinCount!<br>";
-			 print qq(<a href="./scramble_basic.cgi">Play Again</a>);
-			 print qq(<br><a href="./">zapwai.net</a>);
-			 print "</body></html>";
-		       }
+  elsif ($ClockTime <= 0){print "Time up! Your overall win count was $WinCount!<br>";
+			  print qq(<a href="./scramble_moderate.cgi">Play Again</a>);
+			  print qq(<br><a href="./">zapwai.net</a>);
+			  print "</body></html>";
+			}
 }
 
-basic_game();
+moderate_game();

@@ -14,12 +14,28 @@ my $q = CGI->new;
 
 my $filename = "./words";
 
+my $Mode=$q->param('Mode');
+
 my $WinCount=$q->param('WC');
 my $LossCount=$q->param('LC');
 my $word=$q->param('WORD');
 
+
 my $InputWord=$q->param('WordGuess');
 my $text=$InputWord;
+
+## Moderate Settings
+my $ClockTime = $q->param('TimeLeft');
+my $PrevTime = $q->param('PrevTime');
+
+my $CurrentTime = time;
+my $ElapsedTime = $CurrentTime - $PrevTime;  # Number of seconds that you sat there before clicking submit
+
+# Updating $ClockTime (time left)
+$ClockTime = $ClockTime - $ElapsedTime;
+  
+
+## Hard Settings
 
 sub is_word{
   # Input: $text, a string
@@ -54,20 +70,13 @@ $text = lc($text);
 $word = lc($word);
 if ($text eq $word) {
   $WinCount++;			#increment wincount
+  if ($Mode eq "hard") { $ClockTime += 6*(4+$WinCount)} # Add time in hard mode
 } elsif (is_anagram($text, $word) && is_word($text)) {
   $WinCount++;    # increment wincount
+  if ($Mode eq "hard") { $ClockTime += 6*(4+$WinCount)} # Add time in hard mode
 } else {$LossCount++;}		#increment losscount
 
-## Query String passes these params back, see ?& ... below
-
-# Redirect back to scramble_basic with the changed counts.
-## GET METHOD works nice enough with no javascript....
-## But then someone can cheat by changing the query.
-#print $q->redirect("./scramble_basic.cgi?&WC=$WinCount&LC=$LossCount&WORD=$word&WordGuess=$text");
-
-
-## make a page...
-## which contains a form, and passes these parameters with post...
+## Make html page which contains a form, and passes these parameters with post...
 ## autosubmits with javascript. 
 print $q->header;
 print "<html>";
@@ -77,12 +86,13 @@ body {background-image: url("./cork-wallet.png");}
 </style>
 CSS
 print "<body>";
-print qq( <form action="./scramble_basic.cgi" method="post" id="MyForm"> );
+print qq( <form action="./scramble_$Mode.cgi" method="post" id="MyForm"> );
 print <<HTMLPAGE;
 <input type=hidden name=WC value=$WinCount>
 <input type=hidden name=LC value=$LossCount>
 <input type=hidden name=WORD value=$word>
 <input type=hidden name=WordGuess value=$text>
+<input type=hidden name=TimeLeft value=$ClockTime>
 <input type="submit" value="Submit">
 </body></html>
 HTMLPAGE
