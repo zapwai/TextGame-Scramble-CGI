@@ -134,7 +134,7 @@ MENUINPUT
 
   print "<a href='./scramble.html'>Back</a>";
   print "&nbsp&nbsp&nbsp";
-  print "<a href='./'>zapwai.net</a>";
+  print "<a href='../'>zapwai.net</a>";
   print "&nbsp&nbsp&nbsp";
   print qq/<a href="mailto:zapwai\@gmail.com">Contact<\/a>/;
   
@@ -152,12 +152,25 @@ sub moderate_game{
   if ($ClockTime > 0){
     the_game();
   }
-  elsif ($ClockTime <= 0){print "Time up! Your overall win count was $WinCount!<br>";
-			  print qq(<a href="./scramble_moderate.cgi">Play Again</a>);
-			  print qq(<br><a href="./scramble.html">Back</a>);			 
-			  print qq(<br><a href="./">zapwai.net</a>);
-			  print "</body></html>";
-			}
+  elsif ($ClockTime <= 0){
+      print "Time up! Your overall win count was $WinCount!<br>";
+# Add this to the losing case (last elsif) in each scramble_<mode>.cgi
+      print <<FORM;
+	  <br>      
+	      <form action="highscore.cgi" method="post">
+	      	      Please enter your initials: <br>
+<input type="text" name=User autofocus>
+<input type=hidden name=WC value=$WinCount>
+<input type=hidden name=HSMode value="mod">  
+<input type="submit" value="Submit">
+</form>
+FORM
+print qq(<a href="./scramble_moderate.cgi">Play Again</a>);
+      print qq(<br><a href="./scramble.html">Back</a>);			 
+      print qq(<br><a href="../">zapwai.net</a>);
+      print "</body></html>";
+  }
 }
 
 moderate_game();
+
