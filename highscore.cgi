@@ -12,6 +12,15 @@ $nick = substr($nick, 0, 3);
 if (($nick =~ /,/) or ($nick =~ /;/)) {
     $nick = "   ";
 }
+# Correct the length.
+# For formatting purposes, it's nice to have 3 characters.
+if ( length $nick == 2) {
+    $nick = $nick." ";
+} elsif ( length $nick == 1 ){
+    $nick = $nick."  ";
+} elsif ( length $nick == 0 ){
+    $nick = $nick."   ";
+}
 
 # @LINES and $filename are global. I rewrite all 3 lines of the text file.
 
