@@ -52,7 +52,7 @@ sub PrintHTML{
     }
     print $html_target $html_print_output;
     close $html_target;
-    open (my $index_target, ">" $indexname); # (copy to index.html)
+    open (my $index_target, ">", $indexname); # (copy to index.html)
     print $index_target $html_print_output;
     close $index_target;
 }
@@ -115,7 +115,7 @@ sub HighScore {
     } elsif ($NewScore > $PrvScore[2]) {
 	$NewLine = $name_score_chunk[0].";".$name_score_chunk[1].";".$NewLine;
 	$ReturnLine = UpdateScores($mode, $NewLine);
-    } else{		# do nothing.
+    } else {			# do nothing.
 	return;
     }
     # Need to slip this in the HTML file.
