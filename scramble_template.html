@@ -42,7 +42,7 @@
 	      <span class="scores">
 		<span style="font-family: 'Georgia', Serif;">&nbsp;&nbsp&nbsp&nbsp High Scores </span><br>
 		<tt>
-		---,0;---,0;---,0<br>---,0;---,0;---,0<br>---,0;---,0;---,0
+		  ---,0;---,0;---,0<br>---,0;---,0;---,0<br>---,0;---,0;---,0
 		</tt>
 	      </span>
 	    </div>
@@ -68,5 +68,15 @@
       </tr>
 
     </table>
+    
+    <script>
+      window.onload = function() {
+      if(!window.location.hash) {
+      window.location = window.location + '#refresh';
+      window.location.reload();
+      }
+      }
+    </script>
+
   </body>
 </html>
