@@ -121,7 +121,7 @@ sub the_game{
   my $StartTime = time;      
   print <<MENUINPUT;
   <form action="scramble_input.cgi" method="post">
-  Your Guess: <input type="text" name="WordGuess" autofocus>
+  Your Guess: <input type="text" name="WordGuess" maxlength="6" autofocus>
 <input type=hidden name=WC value=$WinCount>
 <input type=hidden name=LC value=$LossCount>
 <input type=hidden name=WORD value=$word>

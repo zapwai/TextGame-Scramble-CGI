@@ -1,7 +1,5 @@
 #!/usr/bin/perl -Tw
 # David Ferrone, 2016
-#
-#
 ####################
 # This processes the input (checks whether you were correct or not).
 # It passes variables with GET...
@@ -11,7 +9,7 @@
 # May 19 2017
 # Considering an update to make this secure.
 # Could pass a Unique ID, WordGuess, and Mode.
-
+####################
 use CGI;
 
 sub strip{
