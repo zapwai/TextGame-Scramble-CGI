@@ -8,15 +8,15 @@
 # You can find this in /usr/dict/words or /usr/share/dict/words
 
 use CGI;
-use CGI::Carp qw(fatalsToBrowser);
+
 my $q = CGI->new;
 
 my $filenum;
 sub eat_cookie{
-    my $cookie = $q->cookie('MyCookie');
+    my $cookie = $q->cookie('HardCookie');
     if ( !"$cookie" ) {
 	$filenum = int rand(1000);
-	$cookie = $q->cookie(-name=>'MyCookie',
+	$cookie = $q->cookie(-name=>'HardCookie',
 			     -value=>"$filenum",
 			     -expires=>'+2h',
 			 );

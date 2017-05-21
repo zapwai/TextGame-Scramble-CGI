@@ -5,7 +5,7 @@
 # Moderate mode fucks up my high scores!!
 
 use CGI;
-use CGI::Carp qw(fatalsToBrowser);
+
 my $q = CGI->new;
 my $filenum = $q->param('UID');
 my $DataFile = "_$filenum.txt";
@@ -18,11 +18,11 @@ my $score = $DATA[0];
 my $mode = $DATA[4];
 my $nick = $q->param('User');
 $nick = substr($nick, 0, 3);
-# Don't let people muck up the string of scores. It's pretty specific.
+
 if (($nick =~ /,/) or ($nick =~ /;/)) {
     $nick = "   ";
 }
-# Correct the length. For formatting purposes; looks nicer to have 3 characters.
+# Correct the length. Formatting looks nicer with 3 characters.
 if ( length $nick == 2) {
     $nick = $nick." ";
 } elsif ( length $nick == 1 ) {

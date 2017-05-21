@@ -11,7 +11,7 @@
 # Could pass a Unique ID, and WordGuess.
 ####################
 use CGI;
-use CGI::Carp qw(fatalsToBrowser);
+
 sub strip{			# Thanks PerlMaven!
     my $str = shift;
     $str =~ s/^\s+|\s+$//g;
