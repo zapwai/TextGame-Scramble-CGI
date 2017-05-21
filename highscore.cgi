@@ -2,10 +2,20 @@
 # CGI version of highscore.pl, March 2017
 # May 2017, the HTML highscores update. We change scramble.html itself.
 
+# Moderate mode fucks up my high scores!!
+
 use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 my $q = CGI->new;
-my $score = $q->param('WC');
-my $mode = $q->param('HSMode');
+my $filenum = $q->param('UID');
+my $DataFile = "_$filenum.txt";
+open (my $FH, "<", $DataFile);
+my @DATA = <$FH>;
+close $FH;
+chomp ( @DATA );
+
+my $score = $DATA[0];
+my $mode = $DATA[4];
 my $nick = $q->param('User');
 $nick = substr($nick, 0, 3);
 # Don't let people muck up the string of scores. It's pretty specific.
@@ -30,7 +40,7 @@ my $htmlname = "scramble.html";
 my $indexname = "index.html";
 open (my $FH, '<', $filename)
     or die "Failed: [Does $filename exist?]<br> $!";
-chomp(my @LINES = <$FH>);	
+chomp(my @LINES = <$FH>);
 close $FH;
 
 sub PrintHTML{
@@ -60,9 +70,9 @@ sub PrintHTML{
 sub UpdateTextScores {
     my ($mode, $NewLine) = @_;
     my $OUTPUT;
-    if ($mode eq 'easy') {
+    if ($mode eq 'basic') {
 	$OUTPUT = $NewLine."\n".$LINES[1]."\n".$LINES[2]."\n";
-    } elsif ($mode eq 'mod') {
+    } elsif ($mode eq 'moderate') {
 	$OUTPUT = $LINES[0]."\n".$NewLine."\n".$LINES[2]."\n";
     } elsif ($mode eq 'hard') {
 	$OUTPUT = $LINES[0]."\n".$LINES[1]."\n".$NewLine."\n";
@@ -75,9 +85,9 @@ sub UpdateTextScores {
 sub UpdateScores {
     my ($mode, $NewLine) = @_;
     my $OUTPUT;
-    if ($mode eq 'easy') {
+    if ($mode eq 'basic') {
 	$OUTPUT = $NewLine."<br>".$LINES[1]."<br>".$LINES[2]."<br>";
-    } elsif ($mode eq 'mod') {
+    } elsif ($mode eq 'moderate') {
 	$OUTPUT = $LINES[0]."<br>".$NewLine."<br>".$LINES[2]."<br>";
     } elsif ($mode eq 'hard') {
 	$OUTPUT = $LINES[0]."<br>".$LINES[1]."<br>".$NewLine."<br>";
@@ -92,9 +102,9 @@ sub HighScore {
     my (@nick, @PrvScore, @name_score_chunk);
 
     # Get names/scores on the right line.
-    if ($mode eq 'easy') {
+    if ($mode eq 'basic') {
 	@name_score_chunk = split /;/, $LINES[0];
-    } elsif ($mode eq 'mod') {
+    } elsif ($mode eq 'moderate') {
 	@name_score_chunk = split /;/, $LINES[1];
     } elsif ($mode eq 'hard') {
 	@name_score_chunk = split /;/, $LINES[2];
@@ -118,17 +128,11 @@ sub HighScore {
     } else {			# do nothing.
 	return;
     }
-    # Need to slip this in the HTML file.
-    # open scramble.html for writing
+
+    # open scramble.html for writing the high scores.
     PrintHTML($ReturnLine);
 }
 
 HighScore(($mode, $nick, $score));
-
-if ($mode eq 'easy') {
-    print $q->redirect('./scramble_basic.cgi');
-} elsif ($mode eq 'mod') {
-    print $q->redirect('./scramble_moderate.cgi');
-} else {
-    print $q->redirect('./scramble_hard.cgi');
-}
+unlink $DataFile;
+print $q->redirect("./scramble.html");

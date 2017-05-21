@@ -8,12 +8,53 @@
 # You can find this in /usr/dict/words or /usr/share/dict/words
 
 use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 my $q = CGI->new;
 
-# get clock time left
-my $ClockTime = $q->param('TimeLeft');
+my $filenum;
+sub eat_cookie{
+    my $cookie = $q->cookie('MyCookie');
+    if ( !"$cookie" ) {
+	$filenum = int rand(1000);
+	$cookie = $q->cookie(-name=>'MyCookie',
+			     -value=>"$filenum",
+			     -expires=>'+2h',
+			 );
+    } else {
+	$filenum = $cookie;	   
+    }
+    return $cookie;
+}
 
-print "Content-type: text/html\n\n";
+sub set_datafile{
+    #WC, LC, WORD, GUESS, MODE, ClockTime, PrevTime(with new lines)
+    my $DataFile = "_$filenum.txt";
+    open (my $FH, ">", $DataFile);
+    print $FH "0\n0\n\n\nhard\n30\n".time."\n";
+    close $FH;
+    chmod 0640, $DataFile;
+}
+
+my $cookie = eat_cookie();	# Cookie sets or gets UID ($filenum)
+print $q->header(-cookie=>$cookie);
+my $DataFile = "_$filenum.txt";
+unless (-e $DataFile){
+    set_datafile();		# Create file if necessary.
+}
+
+open (my $FH, "<", $DataFile);
+my @DATA = <$FH>;
+close $FH;
+
+my $WinCount=$DATA[0];
+my $LossCount=$DATA[1];
+my $PreviousWord=$DATA[2];
+my $PreviousGuess=$DATA[3];
+my $Mode=$DATA[4];
+
+# get clock time left, this should be second to last line.
+my $ClockTime = $DATA[5];
+
 print <<END;
 <html>
 <head>
@@ -23,12 +64,9 @@ a {text-decoration: none; font-size:x-small; font-weight:normal; color:green}
 a:hover {text-decoration: underline; font-size:x-small; font-weight:bold; color:green;}
 a:visited {color:green}
 td { padding: 10px; background-color:#E5E7E9}
-body {background-image: url("./cork-wallet.png");}
 p { font-family: "Georgia"}
 .words { font-family: "Courier New"}
 </style>
-<!-- Thank you subtlepatterns.com for the background -->
-<!-- countdown javascript borrowed from Click Upvote on stackoverflow.com -->
 <script>
 var count=$ClockTime;
 var counter=setInterval(timer, 1000);
@@ -51,25 +89,6 @@ my $WordLength = 4;
 # Relevant files.
 my $filename = "./words";
 
-## Using parameters passed via query string.
-my $WinCount=$q->param('WC');
-my $LossCount=$q->param('LC');
-my $PreviousWord=$q->param('WORD');
-my $PreviousGuess=$q->param('WordGuess');
-
-if ($WinCount eq "") {
-    $WinCount = 0; $PreviousWord="";
-}
-;
-if ($LossCount eq "") {
-    $LossCount = 0;
-}
-;
-if ($ClockTime eq "") {
-    $ClockTime = 30;
-}
-;
-
 $WordLength += $WinCount;
 
 print "Loss Count: $LossCount, &nbsp&nbsp&nbsp&nbsp";
@@ -86,7 +105,7 @@ unless ($ClockTime <= 0 or $ClockTime == 30 or $LossCount > 0){
 }
 ;
 
-#~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 sub select_word{
     #input: length of word, an integer.
@@ -129,20 +148,23 @@ sub mix_word{
 sub the_game{
     # The actual word, $word, is selected and written to SCRAMBLELOG.
     my $word = select_word($WordLength); # word of length WordLength!
+    open (my $FH, ">", $DataFile);
+    for my $k (0 .. $#DATA) {
+	if ($k == 2) {
+	    print $FH $word."\n";
+	} else {
+	    print $FH $DATA[$k];
+	}
+    }
+    close $FH;
   
     my @NewWord = mix_word($word); # NewWord is a permutation of word
     print "<br>The scrambled word is...<br>","<div class='words'>",@NewWord,"</div><br>";
 
-    my $StartTime = time;      
     print <<MENUINPUT;
   <form action="scramble_input.cgi" method="post">
   Your Guess: <input type="text" name="WordGuess" autofocus>
-<input type=hidden name=WC value=$WinCount>
-<input type=hidden name=LC value=$LossCount>
-<input type=hidden name=WORD value=$word>
-<input type=hidden name=TimeLeft value=$ClockTime>
-<input type=hidden name=PrevTime value=$StartTime>
-<input type=hidden name=Mode value="hard">
+<input type=hidden name=UID value=$filenum>
 <input type="submit" value="Submit">
 </form>
 MENUINPUT
@@ -169,8 +191,7 @@ sub hard_game{
 <form action="highscore.cgi" method="post">
 Please enter your initials: <br>
 <input type="text" name=User autofocus>
-<input type=hidden name=WC value=$WinCount>
-<input type=hidden name=HSMode value="hard">  
+<input type=hidden name=UID value=$filenum>  
 <input type="submit" value="Submit">
 </form>
 FORM
