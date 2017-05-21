@@ -3,12 +3,17 @@
 # Copyright David Ferrone, Aug 2014
 # Update (CGI) Aug 2016
 # Update (High scores) Apr 2017
-# UPdate (Cookie, Private parameters) May 2017
+# Update (Cookie, Private parameters, Refresh cheat) May 2017
 ############################################################
 # Keep words file in the same directory.  
 # You can find this in /usr/dict/words or /usr/share/dict/words
 ############################################################
-
+# To stop the 'refresh cheat':
+# (If you hit refresh you used to get a new word, no punishment.)
+# We store @NewWord in $DATA[7] (the scrambled word),
+# We store a 0 or 1 flag in $DATA[8]
+# (0 means we need a word yet, 1 means we have not submitted an answer.)
+############################################################
 use CGI;
 
 my $q = CGI->new;
@@ -16,7 +21,11 @@ my $filenum;
 sub eat_cookie{
     my $cookie = $q->cookie('BasicCookie');
     if ( !"$cookie" ) {
-	$filenum = int rand(1000);
+	do {
+	    $filenum = int rand(10000);
+	}  while (-e "_$filenum.txt") ;
+	# This will guarantee no conflict with multiple users.
+
 	$cookie = $q->cookie(-name=>'BasicCookie',
 			     -value=>"$filenum",
 			     -expires=>'+2h',
@@ -28,10 +37,10 @@ sub eat_cookie{
 }
 
 sub set_datafile{
-    #WC, LC, WORD, GUESS, MODE (with new lines)
+    ##  WC, LC, WORD, GUESS, MODE, ClockTime left, time at load, Scrambled word, refresh_flag (with new lines)
     my $DataFile = "_$filenum.txt";
     open (my $FH, ">", $DataFile);
-    print $FH "0\n0\n\n\nbasic";
+    print $FH "0\n0\n\n\nbasic\n30\n".time."\n\n0\n";
     close $FH;
     chmod 0640, $DataFile;
 }
@@ -78,13 +87,14 @@ my $WinCount=$DATA[0];
 my $LossCount=$DATA[1];
 my $PreviousWord=$DATA[2];
 my $PreviousGuess=$DATA[3];
-
+my $ScrambledWord=$DATA[7];
+my $RefreshFlag=$DATA[8];
 print "Loss Count: $LossCount, &nbsp&nbsp&nbsp&nbsp";
 print "Win Count: $WinCount, &nbsp&nbsp&nbsp&nbsp";
 print "<br>";
 
 # Print previous word, unless you just started playing.
-unless ($LossCount == 0 and $WinCount == 0){
+unless (($LossCount == 0 and $WinCount == 0) or ($RefreshFlag==1)) {
     print "Previous Word: <span class='words'> $PreviousWord</span>, &nbsp&nbsp&nbsp&nbsp";
     print "You said: <span class='words'> $PreviousGuess </span><br>";
 }
@@ -94,8 +104,7 @@ unless ($LossCount == 0 and $WinCount == 0){
 sub select_word{
     #input: length of word, an integer.
     #output a random word from /usr/dict/words of that length.
-
-    my $DesiredLength = @_[0];  # why isn't this a $?
+    my $DesiredLength = shift;
     my $SelectedWord;
     my $CandidateCount = 0;
 
@@ -113,7 +122,7 @@ sub select_word{
 sub mix_word{
     #input: a string
     #output: a permutation of that string (an array)
-    my $word = @_[0];		# Um, make this a $ too..
+    my $word = shift;
     my @NewWord;
     my @Letters = split(//, $word);
 
@@ -129,24 +138,37 @@ sub mix_word{
 # ~~~~~~~~~~~ ~~~~~~~~~~~ ~~~~~~~~~~~ ~~~~~~~~~~~ ~~~~~~~~~~~
 
 sub the_game{
-    # The actual word, $word, is selected and written to our file.
-    my $word = select_word($WordLength);
-    open (my $FH, ">", $DataFile);
-    for my $k (0 .. $#DATA) {
-	if ($k == 2) {
-	    print $FH $word."\n";
-	} else {
-	    print $FH $DATA[$k];
+    # The actual word, $word, is selected and written to our datafile.
+    my @NewWord; #The scrambled word.
+    my $word;
+    unless ($RefreshFlag == 1) {
+	$word = select_word($WordLength);
+	@NewWord = mix_word($word); # NewWord is a permutation of word.
+
+	open (my $FH, ">", $DataFile);
+	for my $k (0 .. $#DATA) {
+	    if ($k == 2) {
+		print $FH $word."\n";
+	    } elsif ($k == 7) {
+		print $FH @NewWord,"\n"; 
+	    } elsif ($k == 8) {
+		print $FH "1\n";
+	    } else {
+		print $FH $DATA[$k];
+	    }
 	}
+	close $FH;
     }
-    close $FH;
-      
-    my @NewWord = mix_word($word); # NewWord is a permutation of word.
+    
+    if ($RefreshFlag==1){
+	@NewWord = $DATA[7];
+    }
+
     print "<br>The scrambled word is...<br>","<div class='words'>",@NewWord,"</div><br>";
 
     print <<SUBFORM;
       <form action="scramble_input.cgi" method="post">
-	  Your Guess: <input type="text" name="WordGuess" maxlength=5 autofocus>
+	  Your Guess: <input type="text" name="WordGuess" maxlength=$WordLength autofocus>
 	  <input type=hidden name=UID value=$filenum>
 	  <input type="submit" value="Submit">
 	  </form>

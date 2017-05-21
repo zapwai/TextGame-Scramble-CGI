@@ -2,13 +2,6 @@
 # David Ferrone, 2016
 ####################
 # This processes the input (checks whether you were correct or not).
-# It passes variables with GET...
-# It makes more sense to write to a file, to keep track of these things.
-# This is more of a 'proof of concept'.
-####################
-# May 19 2017
-# Considering an update to make this secure.
-# Could pass a Unique ID, and WordGuess.
 ####################
 use CGI;
 
@@ -33,20 +26,23 @@ chomp(@DATA);
 my $WinCount=$DATA[0];
 my $LossCount=$DATA[1];
 my $word=$DATA[2]; 
-
+#The inputted $text is $DATA[3], we will write it in a moment.
 my $Mode=$DATA[4];
 
-## Moderate and Hard Settings
+## Moderate and Hard ClockTime Settings
 my $ClockTime;
 my $PrevTime;
-unless ($Mode eq "basic"){
-    $ClockTime = $DATA[5];
-    $PrevTime = $DATA[6];
-    # Number of seconds that you sat there before clicking submit.
-    my $ElapsedTime = time - $PrevTime;
-    # Update $ClockTime (the time left)
-    $ClockTime = $ClockTime - $ElapsedTime;
-}
+
+$ClockTime = $DATA[5];
+$PrevTime = $DATA[6]; # Epoch time, when you loaded previous page.
+# Compute number of seconds that you sat there before clicking submit.
+my $ElapsedTime = time - $PrevTime;
+# Update $ClockTime (the time left)
+$ClockTime = $ClockTime - $ElapsedTime;
+
+my $ScrambledWord=$DATA[7]; #Only used if they hit refresh.
+# These two lines are irrelevant. 
+my $RefreshFlag=$DATA[8]; # It is 1, we turn it into a 0.
 
 sub is_word{
     # Input: $text, a string
@@ -97,13 +93,16 @@ print $FH $LossCount."\n";
 print $FH $word."\n";
 print $FH $text."\n";
 print $FH $Mode."\n";
-unless ($Mode eq "basic"){
-    print $FH $ClockTime."\n";
-    print $FH time."\n"; # Is this line helping you a bit?
-}
+
+print $FH $ClockTime."\n";
+print $FH time."\n"; # This helps you by a few ms I suppose.
+
+print $FH $ScrambledWord."\n";
+print $FH "0\n"; # Resetting the RefreshFlag.
 close $FH;
 
-# autosubmits with javascript. 
+# autosubmits with javascript.
+# (May want to just use a redirect. Would look better.)
 print $q->header;
 print $q->start_html;
 print qq( <form action="./scramble_$Mode.cgi" method="post" id="MyForm"> );

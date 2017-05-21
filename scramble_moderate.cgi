@@ -3,10 +3,8 @@
 # Thanks for playing SCRAMBLE!
 # Copyright David Ferrone, Aug 2014
 # Update (CGI) Sept 2016
+# Update May 2017 
 ##############################
-# Keep words in the same directory.  
-# You can find this in /usr/dict/words or /usr/share/dict/words
-
 use CGI;
 
 my $q = CGI->new;
@@ -15,7 +13,10 @@ my $filenum;
 sub eat_cookie{
     my $cookie = $q->cookie('ModCookie');
     if ( !"$cookie" ) {
-	$filenum = int rand(1000);
+	do{
+	    $filenum = int rand(10000);
+	}  while (-e "_$filenum.txt") ;
+	# This will guarantee no conflict with multiple users.
 	$cookie = $q->cookie(-name=>'ModCookie',
 			     -value=>"$filenum",
 			     -expires=>'+2h',
@@ -27,10 +28,10 @@ sub eat_cookie{
 }
 
 sub set_datafile{
-    #WC, LC, WORD, GUESS, MODE, ClockTime, PrevTime(with new lines)
+    #WC, LC, WORD, GUESS, MODE, ClockTime, PrevTime, ScrambledWord, RefreshFlag
     my $DataFile = "_$filenum.txt";
     open (my $FH, ">", $DataFile);
-    print $FH "0\n0\n\n\nmoderate\n30\n".time."\n";
+    print $FH "0\n0\n\n\nmoderate\n30\n".time."\n\n0\n";
     close $FH;
     chmod 0640, $DataFile;
 }
@@ -52,8 +53,28 @@ my $PreviousWord=$DATA[2];
 my $PreviousGuess=$DATA[3];
 my $Mode=$DATA[4];
 
-# get clock time left, this should be second to last line.
 my $ClockTime = $DATA[5];
+my $PrevTime = $DATA[6];
+my $ScrambledWord=$DATA[7];
+my $RefreshFlag=$DATA[8];
+
+# Reset clocktime to prevent refresh-cheating.
+if ($RefreshFlag==1) {	
+    my $ElapsedTime = time - $PrevTime; 
+    $ClockTime = $ClockTime - $ElapsedTime;
+    # Update $ClockTime and $PrevTime in the datafile.
+    open (my $FH, ">", $DataFile);
+    for my $k (0 .. $#DATA) {
+	if ($k == 5) {
+	    print $FH $ClockTime."\n";
+	} elsif ($k == 6) {
+	    print $FH time."\n"; 
+	} else {
+	    print $FH $DATA[$k];
+	}
+    }
+    close $FH;
+}
 
 print <<END;
 <html>
@@ -93,9 +114,9 @@ print "Loss Count: $LossCount, &nbsp&nbsp&nbsp&nbsp";
 print "Win Count: $WinCount, &nbsp&nbsp&nbsp&nbsp";
 print "<br>";
 
-unless ($LossCount == 0 and $WinCount == 0){print "Previous Word: <span class='words'> $PreviousWord</span>, &nbsp&nbsp&nbsp&nbsp";
-					    print "You said: <span class='words'> $PreviousGuess</span><br>";
-					}
+unless (($LossCount == 0 and $WinCount == 0) or ($RefreshFlag==1)) {print "Previous Word: <span class='words'> $PreviousWord</span>, &nbsp&nbsp&nbsp&nbsp";
+								    print "You said: <span class='words'> $PreviousGuess</span><br>";
+								}
 
 unless ($ClockTime <= 0 or $ClockTime == 30){
     print "Time Left: <span id='timer'>$ClockTime</span> seconds"; # Javascript countdown...
@@ -108,8 +129,7 @@ unless ($ClockTime <= 0 or $ClockTime == 30){
 sub select_word{
     #input: length of word, an integer.
     #output a random word from /usr/dict/words of that length.
-
-    my $DesiredLength = @_[0];
+    my $DesiredLength = shift;
     my $SelectedWord;
     my $CandidateCount = 0;
 
@@ -128,7 +148,7 @@ sub select_word{
 sub mix_word{
     #input: a string
     #output: a permutation of that string (an array)
-    my $word = @_[0];
+    my $word = shift;
     my @NewWord;
     my @Letters = split(//, $word);
 
@@ -145,24 +165,36 @@ sub mix_word{
 
 sub the_game{
     # The actual word, $word, is selected and written to datafile.
-    my $word = select_word($WordLength);
-    open (my $FH, ">", $DataFile);
-    for my $k (0 .. $#DATA) {
-	if ($k == 2) {
-	    print $FH $word."\n";
-	} else {
-	    print $FH $DATA[$k];
-	}
-    }
-    close $FH;
+    my $word;
+    my @NewWord;
 
-  
-    my @NewWord = mix_word($word); # NewWord is a permutation of word
+    unless ($RefreshFlag == 1) {
+	$word = select_word($WordLength);
+	@NewWord = mix_word($word); # NewWord is a permutation of word
+	open (my $FH, ">", $DataFile);
+	for my $k (0 .. $#DATA) {
+	    if ($k == 2) {
+		print $FH $word."\n";
+	    } elsif ($k == 7) {
+		print $FH @NewWord,"\n"; 
+	    } elsif ($k == 8) {
+		print $FH "1\n";
+	    } else {
+		print $FH $DATA[$k];
+	    }
+	}
+	close $FH;
+    }
+
+    if ($RefreshFlag==1) {
+	@NewWord = $DATA[7];
+    }
+
     print "<br>The scrambled word is...<br>","<div class='words'>",@NewWord,"</div><br>";
 
     print <<MENUINPUT;
   <form action="scramble_input.cgi" method="post">
-  Your Guess: <input type="text" name="WordGuess" maxlength="6" autofocus>
+  Your Guess: <input type="text" name="WordGuess" maxlength=$WordLength autofocus>
 <input type=hidden name=UID value=$filenum>
 <input type="submit" value="Submit">
 </form>
